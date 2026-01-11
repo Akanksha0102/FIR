@@ -1,11 +1,12 @@
-# Problem Statement: 4 - Analysis of FIR using AI/ML for proper Act and Section
+--FIR Management System
+A full-stack web application for FIR Analysis and Act/Section Prediction using AI/ML,
+built as part of the Rajasthan Police Hackathon.
 
-Team Name : The Crusade
+--Description
+The system allows
+  Uploading or entering an FIR
+  Analyzing the text using NLP/ML models
+  Providing predicted Act & Section results
+  User interface for officers to review recommendations
 
-Registration ID - RJPOLICE_HACK_991
-
-Team members:
-1. Ananay Kaushal
-2. Chaitanya Kohli
-3. Arun Kushwaha
-4. Vishesh Garg
+This improves accuracy and speeds up case filing and classification.
