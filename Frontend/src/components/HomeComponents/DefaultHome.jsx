@@ -1,248 +1,188 @@
-
-import React, { Component, useState } from "react";
+import React, { useState } from "react";
 import "./style.css";
-import Main from "./main";
+import axios from "axios";
+
 import Statement from "../Statement/Statement";
 import ImageSearch from "../Statement/ImageSearch";
-import axios from 'axios';
 import Voicesearch from "../Statement/Voicesearch";
 import Details from "../Details/Details";
-// import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-
-
-import {youtube,
-    CM,
-    indianlion,
-    policelogo,
-    facebook,
-    numb,
-    insta,
-    twitter,
-    defaultbg,audit,
-    security,
-    user,
-    customer,
-    Home,
-    newtab,} from "../../assets/images"
 
 const DefaultHome = () => {
-    let SearchType=[
-        {
-          "source": {
-            "value":"Name",
-              "name": "Home"
-              },
-              "PoliceStation": "Police Station(optional)",
-              
-              },
-        {
-        "source": {
-          "value":"Id",
-            "name": "The Crusade"
-            },
-            "PoliceStation": "lorem",
-            
-            },
-        {
-        "source": {
-          "value":"Both",
-            "name": "Know Your Police"
-            },
-            "PoliceStation": "lorem",
-            },
-        {
-        "source": {
-          "value":"None",
-              "name": "Citizen services"
-              }, 
-              "PoliceStation": "lorem",
-              },
 
-              {
-                "source": {
-                  "value":"jkdf",
-                      "name": "Community Policing"
-                      }, 
-                      "PoliceStation": "lorem",
-                      },
+  const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
 
-{
-        "source": {
-          "value":"fdsf",
-              "name": "Organization Wings"
-              }, 
-              "PoliceStation": "lorem",
-              },
-              {
-                "source": {
-                  "value":"Nogsdfhne",
-                      "name": "Crime & criminal Information"
-                      }, 
-                      "PoliceStation": "lorem",
-                      },
+  const handleAnalyze = async () => {
 
-                      {
-                        "source": {
-                          "value":"asfre4t",
-                              "name": "Police Desk"
-                              }, 
-                              "PoliceStation": "lorem",
-                              },
-            {
-        "source": {
-          "value":"Negeone",
-              "name": "Contact Information"
-              }, 
-              "PoliceStation": "lorem",
-              },
+    if (!file) {
+      alert("Please select a file");
+      return;
+    }
 
+    try {
+      setLoading(true);
 
-              {
-                "source": {
-                  "value":"Nasteone",
-                      "name": "Downloads"
-                      }, 
-                      "PoliceStation": "lorem",
-                      },
+      const formData = new FormData();
+      formData.append("file", file);
 
+      // STEP 1: Upload file
+      const uploadRes = await axios.post(
+        "http://127.0.0.1:8000/api/ocr/upload/",
+        formData
+      );
 
+      const fileId = uploadRes.data.id;
 
-                      {
-                        "source": {
-                          "value":"Nonge4gte",
-                              "name": "Other Department Links"
-                              }, 
-                              "PoliceStation": "lorem",
-                              },
-                      
-              
-        
-            ]
-        const Search = SearchType.map((type) =>
-          <option key={type.source.value}>{type.source.name}</option>
-          );
-      
-        const [selected, setSelected] = React.useState(""); 
-        const changeSelectOptionHandler = (event) => { 
-          setSelected(event.target.value); 
-        }; 
+      // STEP 2: Process FIR
+      const response = await axios.get(
+        `http://127.0.0.1:8000/api/ocr/file/${fileId}/`
+      );
 
-        const SearchInfo=()=>{
-            if (selected === "Home") { 
-              return(
-                <Main/>
-                )
-              } 
-              else if (selected === "The Crusade") { 
-                return(
-                    <>
-                    
-                    <Statement/>
-                    <ImageSearch/>
-                    <div className="container flex justify-center text-white ">
-          
-                    <Voicesearch/>
-                    </div>
-                    <Details />
-                    </>
-          
-              )
-            }
-             
-          }
-      
+      setResult(response.data.data);
+
+    } catch (error) {
+      console.error(error);
+      alert("Error processing FIR");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-   <>
-    <div className="container">
-        <div className="nav flex justify-between bg-white">
-            <div className="logos flex ">
-                <div ><img className="logo" src={indianlion} alt="" /></div>
-                <div><img className="logo" src={policelogo} alt="" /></div>
-                <div className="text-2xl raj">
-                   Rajasthan Police
-                   
-                  </div>
-            </div >
-            <div className="sidebar flex">
-                <div className="flex mx-5 ">
+    <div className="min-h-screen bg-gray-950 text-white">
 
-               
-            <div className=" reto   form-check form-switch">
-  <input className="form-check-input " type="checkbox" id="flexSwitchCheckChecked" checked />
-  <label className="form-check-label" htmlFor="flexSwitchCheckChecked ">en</label>
-</div>
-<button className="shade1"></button>
-<button className="shade2"></button>
-<button className="shade3"></button>
-<button className="shade4"></button>
-<div className="flex mx-4">
+      {/* NAVBAR */}
+      <nav className="flex items-center justify-between px-10 py-6 border-b border-gray-800">
 
-<button className="blueshade">A+</button>
-<button className="blueshade">A</button>
-<button className="blueshade">A-</button>
-</div>
-</div>
-</div>
-<div>
-    
+        <h1 className="text-3xl font-bold text-blue-500">
+          FIR AI
+        </h1>
 
-<div className="cm">
-    <div ><img className="cmimage" src={CM} alt="" /></div>
-    <div className="dis">
-        <div className="name">Shri Bhajan Lal Sharma</div>
-        <div className="name">Hon'ble Chife Minister of <br/> Rajasthan</div>
+        <button className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl">
+          Dashboard
+        </button>
+
+      </nav>
+
+      {/* HERO SECTION */}
+      <section className="text-center pt-24 px-6">
+
+        <h1 className="text-6xl font-bold leading-tight max-w-5xl mx-auto">
+          AI-Powered FIR Analysis System
+        </h1>
+
+        <p className="text-gray-400 text-xl mt-8 max-w-3xl mx-auto">
+          Automate FIR understanding using OCR, GPT-based legal intelligence,
+          multilingual document analysis, and AI-powered summarization.
+        </p>
+
+        {/* FILE INPUT */}
+        <input
+          type="file"
+          onChange={(e) => setFile(e.target.files[0])}
+          className="mt-10 mx-auto block text-white"
+        />
+
+        {/* BUTTONS */}
+        <div className="flex justify-center gap-6 mt-10">
+
+          <button
+            onClick={handleAnalyze}
+            disabled={loading}
+            className="bg-blue-600 hover:bg-blue-700 px-8 py-4 rounded-xl text-lg"
+          >
+            {loading ? "Processing..." : "Upload & Analyze FIR"}
+          </button>
+
+          <button className="border border-gray-700 hover:bg-gray-800 px-8 py-4 rounded-xl text-lg">
+            View Demo
+          </button>
+
+        </div>
+
+        {/* RESULT DISPLAY */}
+        {result && (
+          <div className="mt-12 bg-gray-900 p-6 rounded-xl max-w-2xl mx-auto text-left">
+
+            <h2 className="text-2xl font-bold mb-4">Analysis Result</h2>
+
+            <p><b>Section:</b> {result.section_identified}</p>
+            <p><b>Offence:</b> {result.offence_detected}</p>
+            <p><b>Court:</b> {result.court}</p>
+            <p><b>Cognizable:</b> {result.is_cognizable ? "Yes" : "No"}</p>
+            <p><b>Bailable:</b> {result.is_bailable ? "Yes" : "No"}</p>
+
+          </div>
+        )}
+
+      </section>
+
+      {/* FEATURE CARDS */}
+      <section className="grid md:grid-cols-3 gap-8 px-10 mt-24">
+
+        <div className="bg-gray-900 p-8 rounded-2xl border border-gray-800">
+          <h2 className="text-2xl font-semibold mb-4">
+            OCR Extraction
+          </h2>
+          <p className="text-gray-400">
+            Extract FIR text from scanned images and PDFs using AI-powered OCR.
+          </p>
+        </div>
+
+        <div className="bg-gray-900 p-8 rounded-2xl border border-gray-800">
+          <h2 className="text-2xl font-semibold mb-4">
+            Legal Intelligence
+          </h2>
+          <p className="text-gray-400">
+            Automatically identify IPC sections, punishments,
+            court types, and legal categories.
+          </p>
+        </div>
+
+        <div className="bg-gray-900 p-8 rounded-2xl border border-gray-800">
+          <h2 className="text-2xl font-semibold mb-4">
+            AI Summarization
+          </h2>
+          <p className="text-gray-400">
+            Generate concise FIR summaries and legal insights
+            using GPT-powered language models.
+          </p>
+        </div>
+
+      </section>
+
+      {/* MAIN WORKFLOW */}
+      <section className="mt-28 px-6">
+
+        <div className="text-center mb-16">
+
+          <h2 className="text-5xl font-bold">
+            Analyze FIR Documents
+          </h2>
+
+          <p className="text-gray-400 mt-4 text-lg">
+            Upload FIRs and generate structured legal insights instantly.
+          </p>
+
+        </div>
+
+        <div className="space-y-16">
+          <Statement />
+        </div>
+
+      </section>
+
+      {/* FOOTER */}
+      <footer className="border-t border-gray-800 mt-28 py-10 text-center text-gray-500">
+
+        <p>AI-Powered FIR Analysis System</p>
+        <p className="mt-2">OCR • NLP • GPT • Legal Intelligence</p>
+
+      </footer>
+
     </div>
-</div>
-           
-           
-            </div>
-        </div>
-
-        
-        <div className="stickybar ">
-            
-            <div className="menu">
-            
-            <select onChange={changeSelectOptionHandler} className="length form-select mx-1 my-2 " aria-label="Default select example"> 
-          {Search}
-          </select> 
-            
-
-
-            <div className="home"><img className="logosi" src={Home} alt="home" /></div>
-            </div>
-            <div className="contacts">
-                <div className="emenum">Emergency No. : 112</div>
-                <div className="emenum">Garima Helpline: 1090</div>
-                <div className="emenum">Child Helpline: 1098</div>
-                <div className="emenum">Amulance No. : 108</div>
-                <div className="emenum">CyberCrime Helpline: 1930</div>
-                <div className="emenum">State Centralizedccall Center no. : 181</div>
-            </div>
-        </div>
-        <div>
-            
-        <SearchInfo/>
-        </div>
-        
-
-        <div className="whitebar bg-white">
-            <div className="diiiv">click here to Scorll Entire Content</div>
-        </div>
-
-        <footer>
-        <div className="visitors">No. Of visitors: <img className="numb" src={numb} alt="" /></div>
-        <div className="footcontent">
-            <div className="foot">Nodal Office:Shri Sharat Kaviraj, IGP SCRB, Rajasthan, Copyright &copy; 2023</div>
-            <div className="foot">Police. All rights reserved. Disclaimer</div>
-            <div className="lowfoot">website Last Updated: Jan 17,2024</div>
-        </div>
-        </footer>
-    </div>
-   </>
   );
 };
-// }
 
 export default DefaultHome;
-

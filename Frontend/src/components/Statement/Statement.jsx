@@ -1,320 +1,177 @@
-// "use client";
-
-// import { motion } from "framer-motion";
-// import { textContainer, textVariant2 } from "../Tracks/motion";
-import React, { Component, useState } from "react";
-// import { TitleText } from "../Tracks/CustomTexts";
-import "./style.css";
-import { motion } from "framer-motion";
-import { SearchDetails } from './SearchDetails';
-import Design_copmponent from '../design_componet/opacity';
-import { staggerContainer } from "../Tracks/motion";
-import styles from "../Tracks/style";
+import React, { useState } from "react";
 import axios from "axios";
-// import Voicesearch from "./Voicesearch";
-// import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition';
-
 
 const Statement = () => {
 
-        
+  const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
 
-  // const TitleText = ({ title, textStyles }) => (
-  //   <motion.h2
-  //     variants={textVariant2}
-  //     initial="hidden"
-  //     whileInView="show"
-  //     className={`mt-[8px] font-bold md:text-[64px] text-[40px] text-white ${textStyles}`}
-  //   >
-  //     {title}
-  //   </motion.h2>
-  // );
-  
+  // Handle File Selection
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0]);
+  };
 
-  let articles=[
-    {
-      "source": {
-          "id":"1",
-          "name": "State"
-          },
-          "key":"1",
-          "PoliceStation": "Police Station(optional)",
-          
-          },
-    {
-    "source": {
-      "id":"2",
-        "name": "Andhra Pradesh"
-        },
-        "key":"2",
-        "PoliceStation": "lorem",
-        
-        },
-    {
-    "source": {
-      "id":"3",
-        "name": "Arunachal Pradesh	"
-        },
-        "key":"3",
-        "PoliceStation": "lodfasrem",
-        },
-    {
-    "source": {
-      "id":"4",
-        "name": "Assam"
-        },
-        "key":"4",
-        "PoliceStation": "loadfrem",
-        
-        },
-    {
-    "source": {
-      "id":"5",
-        "name": "Bihar"
-        },
-        "key":"5",
-        "PoliceStation": "loghrem",
-        
-        },
-    {
-    "source": {
-      "id":"6",
-        "name": "Chhattisgarh"
-        },
-        "key":"6",
-        "PoliceStation": "lorejtm",
+  // Handle FIR Upload + Processing
+  const handleProcess = async () => {
 
-        },
-    {
-    "source": {
-      "id":"7",
-        "name": "Goa"
-        },
-        "key":"7",
-        "PoliceStation": "loryjem",
-        
-        },
-    {
-    "source": {
-      "id":"8",
-        "name": "Gujarat"
-        },
-        "key":"8",
-        "PoliceStation": "loukfrem",
-      },
-    
-    {
-    "source": {
-      "id":"9",
-        "name": "Haryana"
-        },
-        "key":"9",
-        "PoliceStation": "lomyrem",
-        }
-        ]
-    let SelectState = articles.map((element) =>
-      <option key={element.source.id}>{element.source.name}</option>
-  );
-  let SelectPoliceStation = articles.map((elements) =>
-  <option key={elements.key}>{elements.PoliceStation}</option>
-);
+    if (!file) {
+      alert("Please upload an FIR file");
+      return;
+    }
 
-let SearchType=[
-  {
-    "source": {
-      "value":"Name",
-        "name": "Search Type"
-        },
-        "PoliceStation": "Police Station(optional)",
-        
-        },
-  {
-  "source": {
-    "value":"Id",
-      "name": "Text Search"
-      },
-      "PoliceStation": "lorem",
-      
-      },
-  {
-  "source": {
-    "value":"Both",
-      "name": "Image Search"
-      },
-      "PoliceStation": "lorem",
-      },
-  {
-  "source": {
-    "value":"None",
-        "name": "Voice Search"
-        }, 
-        "PoliceStation": "lorem",
-        },
-  
-      ]
-  const Search = SearchType.map((type) =>
-    <option key={type.source.value}>{type.source.name}</option>
-    );
+    try {
 
-  const [selected, setSelected] = React.useState(""); 
-  const changeSelectOptionHandler = (event) => { 
-    setSelected(event.target.value); 
-  }; 
+      setLoading(true);
 
-  
+      const formData = new FormData();
+      formData.append("file", file);
 
+      // Upload FIR
+      await axios.post(
+        "http://127.0.0.1:8000/api/ocr/upload/",
+        formData
+      );
 
+      // Process FIR
+      const response = await axios.get(
+        "http://127.0.0.1:8000/api/ocr/process/"
+      );
 
-  // const ImageSearch =()=> {
-  //     const [file, setFile]= useState(' ');
-  //     function handleImage(e){
-  //       console.log(e.target.files);
-  //       setFile(e.target.files[0]);
-  //     }
-  //     function handleApi(){
-  //       const formData = new FormData();
-  //       formData.append('file', file);
-  //       axios.post('http://127.0.0.1:8000/api/ocr/upload/',formData)
-  //       .then((res)=>{
-  //         console.log('Request successful');
-  //       })
-  //       .catch((error) => {
-  //         console.error('Error uploading image:', error);
-  //       });
-  //     }
-    
-  //   return(
-  //     <div className="mb-3 flex flex-col justify-center">
-  //       <label htmlFor="formFile" className="form-label text-slate-500 flex justify-center ">Upload the png,jpg or jpeg formate file</label>
-  //       <input className="form-control" type="file" name="file" onChange={handleImage} id="formFile"/>
-  //       <button type="submit" className="btn btn-success m-2 " onClick={handleApi}>
-  //         Upload Image
-  //       </button>
-  //   </div>
-  //   )
-  // }
-  const TextSearch =()=> {
-    return(
-      <input placeholder="Statement/Scenario"
-            type="text"
-            className="form-control mx-1"
-            id="Statment"
-          />
-    )
-  }
+      console.log(response.data);
 
-  // const VoiceSearch =()=> {
-  //   // const startListening =()=>{
-  //   //   SpeechRecognition.startListening({continuous: true,language:'en-IN , hi-IN'});
+      setResult(response.data);
 
-  //   // }
-      
+    } catch (error) {
 
-  //   // const { transcript, listening,resetTranscript,browserSupportsSpeechRecognition } = useSpeechRecognition();
+      console.error(error);
+      alert("Error processing FIR");
 
-  //   // if (!browserSupportsSpeechRecognition) {
-  //   //   return <span>Browser do not support</span>
-  //   // }
+    } finally {
 
-  //   return(
-  //     <>
-  //     {/* <div className="container">
-  //       <h2>Tap to Speak</h2>
-  //       <p><i class="fa fa-microphone">Microphone:{listening ?'on':'off'}</i></p>
-  //       <div className="main-content">
-  //       <p>{transcript}</p>
-  //       </div>
-        
-  //       <div className="btn-style">
-  //         <button onClick={startListening}>Start Listening</button>
-  //         <button onClick={SpeechRecognition.stopListening}>Stop Listening</button>
-  //         <button onClick={resetTranscript}>Reset</button>
-  //         <button>Copy</button>
-  //       </div>
-        
-  //     </div> */}
+      setLoading(false);
 
-  //     {/* <Voicesearch/> */}
-  //     </>
-  //   )
-  // }
-
-  const SearchInfo=()=>{
-  if (selected === "Text Search") { 
-    return(
-      TextSearch()
-      )
-    } 
-  //   else if (selected === "Image Search") { 
-  //     return(
-  //     ImageSearch()
-
-  //   )
-  // }
-   else if (selected === "Voice Search") { 
-    return(
-      console.log('speak')
-      // VoiceSearch()
-
-    )
-  } 
-}
-
+    }
+  };
 
   return (
-    <div className="container mx-auto my-8">
-       {/* title= */}
-       {
-            <>
-      
-              <div className="container mx-auto px-4 flex justify-center ">
-              
-              <div className="text-3xl lg:text-5xl  text-[#DEECE4] my-3 lg:my-4 font-[Inter] ">
-              Search
-            </div>
-            </div>
-              
-            </>
-          }
-        {/* <TitleText
-         
-          textStyles="text-center"
-        /> */}
-      <form>
-        <div className="m-3 py-2 px-5 d-flex justify-center ">
-          
-          {/* <select onChange={changeSelectOptionHandler} className="form-select mx-1" aria-label="Default select example"> 
-          {Search}
-          </select>  */}
-          <input placeholder="Statement/Scenario"
-            type="text"
-            className="form-control mx-1"
-            id="Statment"
+
+    <div className="max-w-6xl mx-auto">
+
+      {/* Upload Box */}
+      <div className="bg-gray-900 border border-gray-800 rounded-3xl p-10">
+
+        <h2 className="text-4xl font-bold text-center mb-6">
+          Upload FIR Document
+        </h2>
+
+        <p className="text-gray-400 text-center mb-10">
+          Upload scanned FIR images or PDFs for AI-powered legal analysis.
+        </p>
+
+        {/* File Input */}
+        <div className="flex flex-col items-center">
+
+          <input
+            type="file"
+            onChange={handleFileChange}
+            className="mb-6 text-white"
           />
-          <select className="form-select" aria-label="Default select example">
-          {SelectState}
-          </select>
-          
-          <select className="form-select mx-1" aria-label="Default select example">
-          
-          {SelectPoliceStation}
-          </select>
-          {/* <ImageSearch/> */}
-          
-          <button type="submit" className="btn btn-primary " >
-          Process
-        </button>
+
+          <button
+            onClick={handleProcess}
+            className="bg-blue-600 hover:bg-blue-700 px-8 py-4 rounded-xl text-lg"
+          >
+            Analyze FIR
+          </button>
+
         </div>
-        <div className="m-3 py-2 px-5 d-flex justify-center "> 
-          <SearchInfo/>
+
+        {/* Selected File */}
+        {file && (
+
+          <div className="mt-6 text-center text-gray-400">
+            Selected File: {file.name}
           </div>
-      </form>
-      
+
+        )}
+
+      </div>
+
+      {/* Loader */}
+      {loading && (
+
+        <div className="mt-10 text-center text-blue-400 text-xl animate-pulse">
+
+          Running OCR + GPT Legal Analysis...
+
+        </div>
+
+      )}
+
+      {/* AI Results */}
+      {result && (
+
+        <div className="grid md:grid-cols-2 gap-6 mt-16">
+
+          <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800">
+            <h3 className="text-xl font-bold mb-3">
+              IPC Section
+            </h3>
+
+            <p>{result.section_identified}</p>
+          </div>
+
+          <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800">
+            <h3 className="text-xl font-bold mb-3">
+              Offence
+            </h3>
+
+            <p>{result.offence_detected}</p>
+          </div>
+
+          <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800">
+            <h3 className="text-xl font-bold mb-3">
+              Punishment
+            </h3>
+
+            <p>{result.punishment}</p>
+          </div>
+
+          <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800">
+            <h3 className="text-xl font-bold mb-3">
+              Court
+            </h3>
+
+            <p>{result.court}</p>
+          </div>
+
+          <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800">
+            <h3 className="text-xl font-bold mb-3">
+              Cognizable
+            </h3>
+
+            <p>
+              {result.is_cognizable ? "Yes" : "No"}
+            </p>
+          </div>
+
+          <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800">
+            <h3 className="text-xl font-bold mb-3">
+              Bailable
+            </h3>
+
+            <p>
+              {result.is_bailable ? "Yes" : "No"}
+            </p>
+          </div>
+
+        </div>
+
+      )}
 
     </div>
   );
 };
-// }
 
 export default Statement;
-

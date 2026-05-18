@@ -1,80 +1,82 @@
-from django.http import HttpResponse
-from django.shortcuts import render
-from rest_framework import status
-from rest_framework import generics, renderers
-from rest_framework.viewsets import ModelViewSet
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status
 
-from .serializers import *
-from django.conf import settings
-
+from .models import UserUploadedFile, Result
 from modules.ocr_module.ocr import OCR
 from modules.gpt_module.gpt import generate_fir
-# Create your views here.
 
 
-class FileUploadView(generics.CreateAPIView):
-    serializer_class = UserUploadedFileSerializer
-    renderer_classes = [renderers.JSONRenderer]
+# ---------------- UPLOAD VIEW ----------------
+class FileUploadView(APIView):
+    def post(self, request):
 
-    def post(self, request, *args, **kwargs):
-        serializer = UserUploadedFileSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(
-            {"error": serializer.errors}, status=status.HTTP_400_BAD_REQUEST
-        )
+        file = request.FILES.get("file")
+
+        if not file:
+            return Response({"error": "No file uploaded"}, status=400)
+
+        obj = UserUploadedFile.objects.create(file=file)
+
+        return Response({
+            "message": "File uploaded successfully",
+            "id": obj.id
+        }, status=201)
 
 
-class UserUploadedFileView(generics.RetrieveAPIView):
-    serializer_class = UserUploadedFileSerializer
-    renderer_classes = [renderers.JSONRenderer]
+# ---------------- PROCESS VIEW ----------------
+class UserUploadedFileView(APIView):
 
-    def get(self, request, *args, **kwargs):
-        user_uploaded_file = UserUploadedFile.objects.latest("id")
-        relative_file_url = str(user_uploaded_file.file)
-        base_url = str(settings.BASE_DIR)
-        absolute_url = base_url+"/"+relative_file_url
+    def get(self, request, file_id):
 
-            # ocr implimentation
-        ocr = OCR('hi', False) # false cause high gpu usage
-        image_path = absolute_url
-        img = ocr.read_img(image_path)
-        text = ocr.get_text(img, to_be_translated=False, tgt='en')
-        text_str = " ".join(text)
+        try:
+            user_uploaded_file = UserUploadedFile.objects.get(id=file_id)
 
-        print({
-                "fir_text_original": text_str,
-                # "fir_text_translated": translated_text_str
-            })
+            file_path = user_uploaded_file.file.path
+            print("FILE:", file_path)
 
-        """gpt implimentation"""
-        prompt = text_str
-        result = generate_fir(prompt)
-        print(result)
+            # OCR
+            ocr = OCR('hi', False)
+            img = ocr.read_img(file_path)
 
-        return Response(
-                {
-                    result
-                },
-                status=status.HTTP_200_OK
+            text = ocr.get_text(img)
+            # ⚠️ FIX: convert OCR output properly
+            text_str = " ".join(text) if isinstance(text, list) else str(text)
+
+            
+            if not text:
+             return Response({
+               "error": "OCR could not extract any text"
+             }, status=400)
+
+            text_str = " ".join(text)
+
+            # GPT
+            result = generate_fir(text_str)
+
+            print("GPT RESULT:", result)  # 🔥 DEBUG IMPORTANT
+
+            # Save to DB
+            Result.objects.create(
+                file=user_uploaded_file,
+                section_identified=result.get("section_identified", ""),
+                offence_detected=result.get("offence_detected", ""),
+                generated_explanation=result.get("generated_explanation", ""),
+                punishment=result.get("punishment", ""),
+                court=result.get("court", ""),
+                is_cognizable=result.get("is_cognizable", True),
+                is_bailable=result.get("is_bailable", True),
             )
 
-        #     return Response(
-        #         {
-        #             "fir_text_original": text,
-        #             "fir_text_translated": translated_text_str
-        #         }, status=status.HTTP_200_OK
-        #     )
-        # except:
-        #     return Response(status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response({
+                "message": "FIR generated successfully",
+                "data": result   # 🔥 MUST BE FULL RESULT
+            })
 
-# class ResultView(generics.RetrieveAPIView):
-#     serializer_class = ResultSerializer
-#     renderer_classes = [renderers.JSONRenderer]
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
 
-#     def get(self, request, *args, **kwargs):
-#         pass
+            return Response({
+                "error": str(e)
+            }, status=500)

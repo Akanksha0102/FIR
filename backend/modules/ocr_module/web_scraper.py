@@ -8,7 +8,7 @@ try:
 except:
     pass
 url = 'https://home.rajasthan.gov.in/content/homeportal/en/acbdepartment/Fir-by-year.html'
-
+ 
 response = requests.get(url)
 
 soup = BeautifulSoup(response.text, 'html.parser')

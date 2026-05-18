@@ -10,12 +10,14 @@ class Translator:
 
     def translate(self, text, src, tgt):
         self.tokenizer.src_lang = src
+        #Convert text → tokens
         encoded_text = self.tokenizer(text, return_tensors="pt")
+        #Generate translation
         generated_tokens = self.model.generate(
             **encoded_text,
             forced_bos_token_id=self.tokenizer.lang_code_to_id[tgt]
         )
-
+        #Convert tokens → text
         return self.tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)
 
 """
