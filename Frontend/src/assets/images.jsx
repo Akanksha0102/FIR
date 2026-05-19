@@ -45,7 +45,6 @@ import defaultbg from "../assets/images/defaultbg.png"
 
 import audit from "../assets/images/audit.png"
 import customer from "../assets/images/customer_service.png"
-import Home from "../assets/images/Home_button.png"
 import newtab from "../assets/images/newtab.png"
 import security from "../assets/images/security.png"
 import user from "../assets/images/user.png"
@@ -97,6 +96,6 @@ export {
   security,
   user,
   customer,
-  Home,
+  
   newtab,
 };
