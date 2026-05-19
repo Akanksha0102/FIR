@@ -29,13 +29,13 @@ const Statement = () => {
 
       // Upload FIR
       await axios.post(
-        "http://127.0.0.1:8000/api/ocr/upload/",
+        "https://fir-kj8w.onrender.com/api/ocr/upload/",
         formData
       );
 
       // Process FIR
       const response = await axios.get(
-        "http://127.0.0.1:8000/api/ocr/process/"
+        "https://fir-kj8w.onrender.com/api/ocr/process/"
       );
 
       console.log(response.data);

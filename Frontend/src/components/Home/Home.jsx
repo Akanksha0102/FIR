@@ -25,14 +25,14 @@ const handleAnalyze = async () => {
     formData.append("file", file);
 
     const uploadRes = await axios.post(
-      "http://127.0.0.1:8000/api/ocr/upload/",
+      "https://fir-kj8w.onrender.com/api/ocr/upload/",
       formData
     );
 
     const fileId = uploadRes.data.id;
 
     const processRes = await axios.get(
-      `http://127.0.0.1:8000/api/ocr/file/${fileId}/`
+      `https://fir-kj8w.onrender.com/api/ocr/file/${fileId}/`
     );
 
     console.log("FULL RESPONSE:", processRes.data);

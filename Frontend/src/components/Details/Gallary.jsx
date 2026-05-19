@@ -14,7 +14,7 @@ const Gallery = ({ activeTab }) => {
   useEffect(()=>{
     async function Details(){
       try{
-        const showDetails = await axios.get("http://127.0.0.1:8000/api/ocr/file/");
+        const showDetails = await axios.get("https://fir-kj8w.onrender.com/api/ocr/file/");
         console.log(showDetails.data);
         SetDetails(showDetails.data);
         document.write('<p id="jstext">'+ showDetails.data +'</p>');

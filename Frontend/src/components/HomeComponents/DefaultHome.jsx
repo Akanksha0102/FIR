@@ -28,7 +28,7 @@ const DefaultHome = () => {
 
       // STEP 1: Upload file
       const uploadRes = await axios.post(
-        "http://127.0.0.1:8000/api/ocr/upload/",
+        "https://fir-kj8w.onrender.com/api/ocr/upload/",
         formData
       );
 
@@ -36,7 +36,7 @@ const DefaultHome = () => {
 
       // STEP 2: Process FIR
       const response = await axios.get(
-        `http://127.0.0.1:8000/api/ocr/file/${fileId}/`
+        `https://fir-kj8w.onrender.com/api/ocr/file/${fileId}/`
       );
 
       setResult(response.data.data);

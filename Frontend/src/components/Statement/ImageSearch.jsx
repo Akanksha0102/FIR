@@ -16,7 +16,7 @@ const ImageSearch =()=> {
     function handleApi(){
       const formData = new FormData();
       formData.append('file', file);
-      axios.post('http://127.0.0.1:8000/api/ocr/upload/',formData)
+      axios.post('https://fir-kj8w.onrender.com/api/ocr/upload/',formData)
       .then((res)=>{
         console.log('Request successful');
       })
@@ -42,6 +42,7 @@ Upload Image
     
   </div>}
   </div>
+  
   )
 }
 
