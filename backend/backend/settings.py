@@ -28,11 +28,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ["SECRET_KEY"]
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [
+    "fir-kj8w.onrender.com",
+]
 
-CORS_ORIGIN_ALLOW_ALL = True
 
 
 # Application definition
@@ -49,8 +50,9 @@ INSTALLED_APPS = [
     "ocr_app",
 ]
 
-CORS_ALLOWED_ORIGINS = ["http://localhost:5173"]
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOWED_ORIGINS = [
+    "https://fir-peach.vercel.app",
+]
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
