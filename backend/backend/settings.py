@@ -50,10 +50,9 @@ INSTALLED_APPS = [
     "ocr_app",
 ]
 
-# CORS_ALLOWED_ORIGINS = [
-#     "https://fir-peach.vercel.app",
-# ]
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "https://fir-peach.vercel.app",
+]
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
