@@ -25,15 +25,23 @@ class UserUploadedFile(models.Model):
 
 
 class Result(models.Model):
+    STATUS_CHOICES = [
+        ("processing", "Processing"),
+        ("done", "Done"),
+        ("error", "Error"),
+    ]
+
     file = models.ForeignKey(UserUploadedFile, on_delete=models.CASCADE)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="processing")
+    error_message = models.TextField(blank=True, default="")
 
-    section_identified = models.CharField(max_length=100)
-    offence_detected = models.CharField(max_length=1000)
+    section_identified = models.CharField(max_length=100, blank=True, default="")
+    offence_detected = models.CharField(max_length=1000, blank=True, default="")
 
-    generated_explanation = models.TextField()
+    generated_explanation = models.TextField(blank=True, default="")
 
-    punishment = models.TextField()
-    court = models.CharField(max_length=1000)
+    punishment = models.TextField(blank=True, default="")
+    court = models.CharField(max_length=1000, blank=True, default="")
 
     is_cognizable = models.BooleanField(default=True)
     is_bailable = models.BooleanField(default=True)

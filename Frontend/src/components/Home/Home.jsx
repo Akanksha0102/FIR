@@ -31,21 +31,37 @@ const handleAnalyze = async () => {
 
     const fileId = uploadRes.data.id;
 
-    const processRes = await axios.get(
+    // Kicks off background OCR + GPT processing, returns immediately
+    const startRes = await axios.get(
       `https://fir-kj8w.onrender.com/api/ocr/file/${fileId}/`
     );
 
-    console.log("FULL RESPONSE:", processRes.data);
+    const resultId = startRes.data.result_id;
 
-    // IMPORTANT FIX
-    const data = processRes.data.data || processRes.data;
+    // Poll for the result every 3s, up to ~2 minutes
+    const maxAttempts = 40;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      await new Promise((r) => setTimeout(r, 3000));
 
-    if (data.error) {
-      alert(data.error);
+      const pollRes = await axios.get(
+        `https://fir-kj8w.onrender.com/api/ocr/result/${resultId}/`
+      );
+
+      if (pollRes.data.status === "processing") {
+        continue;
+      }
+
+      if (pollRes.data.status === "error") {
+        alert(pollRes.data.error || "Server error while processing FIR");
+        return;
+      }
+
+      // status === "done"
+      setResult(pollRes.data.data);
       return;
     }
 
-    setResult(data);
+    alert("Processing is taking longer than expected. Please try again.");
 
   } catch (error) {
     console.log(error);

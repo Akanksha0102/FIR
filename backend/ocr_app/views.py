@@ -1,17 +1,16 @@
+import threading
+import traceback
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status as http_status
 
 from .models import UserUploadedFile, Result
 from modules.ocr_module.ocr import get_ocr_instance
-
 from modules.gpt_module.gpt import generate_fir
-
-import tempfile
 
 
 # ---------------- UPLOAD VIEW ----------------
-
 class FileUploadView(APIView):
     def post(self, request):
 
@@ -28,102 +27,116 @@ class FileUploadView(APIView):
         }, status=201)
 
 
-# ---------------- PROCESS VIEW ----------------
+def _process_fir(file_id: int, result_id: int):
+    """
+    Runs OCR + GPT in a background thread.
+    Updates the Result row with the outcome so the frontend
+    can poll for it instead of holding a single long request open
+    (which exceeds Render's proxy timeout).
+    """
+    try:
+        user_uploaded_file = UserUploadedFile.objects.get(id=file_id)
+        file_path = str(user_uploaded_file.file.path)
 
+        ocr = get_ocr_instance("hi", False)
+
+        img = ocr.read_img(file_path)
+        if img is None:
+            raise ValueError("Image could not be loaded")
+
+        text = ocr.get_text(img)
+        if not text:
+            raise ValueError("OCR could not extract text")
+
+        text_str = " ".join(text) if isinstance(text, list) else str(text)
+
+        result = generate_fir(text_str)
+
+        if "error" in result and len(result) == 1:
+            raise ValueError(f"GPT error: {result['error']}")
+
+        Result.objects.filter(id=result_id).update(
+            status="done",
+            section_identified=result.get("section_identified", ""),
+            offence_detected=result.get("offence_detected", ""),
+            generated_explanation=result.get("generated_explanation", ""),
+            punishment=result.get("punishment", ""),
+            court=result.get("court", ""),
+            is_cognizable=result.get("is_cognizable", True),
+            is_bailable=result.get("is_bailable", True),
+        )
+
+    except Exception as e:
+        print(traceback.format_exc())
+        Result.objects.filter(id=result_id).update(
+            status="error",
+            error_message=str(e),
+        )
+
+
+# ---------------- PROCESS VIEW ----------------
 class UserUploadedFileView(APIView):
+    """
+    Kicks off FIR processing in the background and immediately
+    returns a result_id the frontend can poll via ResultStatusView.
+    """
 
     def get(self, request, file_id):
-
         try:
             user_uploaded_file = UserUploadedFile.objects.get(id=file_id)
+        except UserUploadedFile.DoesNotExist:
+            return Response({"error": "Uploaded file not found"}, status=404)
 
-            if not user_uploaded_file.file:
-                return Response(
-                    {"error": "Uploaded file not found"},
-                    status=404
-                )
+        if not user_uploaded_file.file:
+            return Response({"error": "Uploaded file not found"}, status=404)
 
-            file = user_uploaded_file.file
+        result = Result.objects.create(file=user_uploaded_file, status="processing")
 
-            print("FILE NAME:", file.name)
+        thread = threading.Thread(
+            target=_process_fir,
+            args=(file_id, result.id),
+            daemon=True,
+        )
+        thread.start()
 
-            # ---------------- SAFE FILE HANDLING (IMPORTANT FIX) ----------------
-            # Render-safe: do NOT rely on .path
-            with tempfile.NamedTemporaryFile(delete=False) as tmp:
-                for chunk in file.chunks():
-                    tmp.write(chunk)
-                tmp_path = tmp.name
-
-            print("TEMP FILE PATH:", tmp_path)
-
-
-
+        return Response({
+            "message": "Processing started",
+            "result_id": result.id,
+            "status": "processing",
+        }, status=202)
 
 
-            # ---------------- OCR ----------------
-            print("FILE EXISTS:", bool(user_uploaded_file.file))
-            print("FILE NAME:", user_uploaded_file.file.name)
-            print("FILE PATH:", getattr(user_uploaded_file.file, "path", None))
-            ocr = get_ocr_instance("hi", False)
+# ---------------- STATUS / RESULT VIEW ----------------
+class ResultStatusView(APIView):
+    """
+    Frontend polls this endpoint with the result_id returned above
+    until status is 'done' or 'error'.
+    """
 
+    def get(self, request, result_id):
+        try:
+            result = Result.objects.get(id=result_id)
+        except Result.DoesNotExist:
+            return Response({"error": "Result not found"}, status=404)
 
-            img = ocr.read_img(tmp_path)
+        if result.status == "processing":
+            return Response({"status": "processing"})
 
-            if img is None:
-                return Response(
-                    {"error": "Image could not be loaded"},
-                    status=400
-                )
-
-            text = ocr.get_text(img)
-
-            if not text:
-                return Response(
-                    {"error": "OCR could not extract text"},
-                    status=400
-                )
-
-            text_str = (
-                " ".join(text)
-                if isinstance(text, list)
-                else str(text)
-            )
-
-            print("OCR TEXT:", text_str[:300])
-
-            # ---------------- GPT ----------------
-            result = generate_fir(text_str)
-
-            print("GPT RESULT:", result)
-
-            # ---------------- SAVE RESULT ----------------
-            Result.objects.create(
-                file=user_uploaded_file,
-                section_identified=result.get("section_identified", ""),
-                offence_detected=result.get("offence_detected", ""),
-                generated_explanation=result.get("generated_explanation", ""),
-                punishment=result.get("punishment", ""),
-                court=result.get("court", ""),
-                is_cognizable=result.get("is_cognizable", True),
-                is_bailable=result.get("is_bailable", True),
-            )
-
+        if result.status == "error":
             return Response({
-                "message": "FIR generated successfully",
-                "data": result
+                "status": "error",
+                "error": result.error_message,
             }, status=200)
 
-        except UserUploadedFile.DoesNotExist:
-            return Response(
-                {"error": "File ID does not exist"},
-                status=404
-            )
-
-        except Exception as e:
-            import traceback
-            print(traceback.format_exc())
-
-            return Response(
-                {"error": str(e)},
-                status=500
-            )
+        return Response({
+            "status": "done",
+            "data": {
+                "section_identified": result.section_identified,
+                "offence_detected": result.offence_detected,
+                "generated_explanation": result.generated_explanation,
+                "punishment": result.punishment,
+                "court": result.court,
+                "is_cognizable": result.is_cognizable,
+                "is_bailable": result.is_bailable,
+            },
+        })

@@ -34,12 +34,42 @@ const DefaultHome = () => {
 
       const fileId = uploadRes.data.id;
 
-      // STEP 2: Process FIR
-      const response = await axios.get(
+      // STEP 2: Start background processing
+      const startRes = await axios.get(
         `https://fir-kj8w.onrender.com/api/ocr/file/${fileId}/`
       );
 
-      setResult(response.data.data);
+      const resultId = startRes.data.result_id;
+
+      // STEP 3: Poll until done
+      const maxAttempts = 40;
+      let finished = false;
+
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        await new Promise((r) => setTimeout(r, 3000));
+
+        const pollRes = await axios.get(
+          `https://fir-kj8w.onrender.com/api/ocr/result/${resultId}/`
+        );
+
+        if (pollRes.data.status === "processing") {
+          continue;
+        }
+
+        if (pollRes.data.status === "error") {
+          alert(pollRes.data.error || "Error processing FIR");
+          finished = true;
+          break;
+        }
+
+        setResult(pollRes.data.data);
+        finished = true;
+        break;
+      }
+
+      if (!finished) {
+        alert("Processing is taking longer than expected. Please try again.");
+      }
 
     } catch (error) {
       console.error(error);
