@@ -9,7 +9,6 @@ __pycache__
 /Frontend/.pnp
 /Frontend/.gitignore
 .pnp.js
-# /Frontend/src/components/Tracks/CustomTests.jsx
 
 # testing
 /Frontend/coverage
@@ -31,3 +30,19 @@ yarn-error.log*
 # database
 backend/db.sqlite3
 backend/media
+
+# Vite cache (should never be committed)
+Frontend/.vite/
+
+# Vite build output
+Frontend/dist/
+
+# Test image data (large, not needed for app)
+backend/modules/ocr_module/data/
+
+# Compiled Python files
+**/*.pyc
+*.pyo
+
+# OS files
+Thumbs.db
